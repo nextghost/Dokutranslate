@@ -1,0 +1,7 @@
+base   dokutranslate
+author Martin Doucha
+email  next_ghost@quick.cz
+date   2012-05-17
+name   dokutranslate plugin
+desc   Plugin for crowdsourced translation of books
+url    http://foo.org/
