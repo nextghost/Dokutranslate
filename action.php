@@ -15,40 +15,172 @@ if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
 require_once DOKU_PLUGIN.'action.php';
 
+function allRevisions($id) {
+	$ret = array();
+	$lines = @file(metaFN($id, '.changes'));
+
+	if (!$lines) {
+		return $ret;
+	}
+
+	foreach ($lines as $line) {
+		$tmp = parseChangelogLine($line);
+		$ret[] = $tmp['date'];
+	}
+
+	return $ret;
+}
+
+function genTranslateFile($inputFile) {
+	$ret = array();
+	$par = "~~DOKUTRANSLATE_PARAGRAPH~~\n";
+	$lines = @file($inputFile);
+
+	if (!$lines) {
+		return ret;
+	}
+
+	$parOpen = true;
+
+	# Add another markup line on first line of every paragraph
+	foreach ($lines as $line) {
+		if (trim($line) == '') {
+			$parOpen = true;
+		} else if ($parOpen) {
+			$ret[] = $par;
+			$parOpen = false;
+		}
+	}
+
+	return $ret;
+}
+
+function genMeta($lineCount) {
+	$ret = array();
+
+	# Generate paragraph info
+	for ($i = 0; $i < $lineCount; $i++) {
+		$ret[$i]['changed'] = '';
+		$ret[$i]['ip'] = clientIP(true);
+		$ret[$i]['user'] = $_SERVER['REMOTE_USER'];
+		$ret[$i]['reviews'] = array();
+	}
+
+	return $ret;
+}
+
 class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 	public function register(Doku_Event_Handler &$controller) {
 		$this->setupLocale();
 		$controller->register_hook('HTML_EDITFORM_OUTPUT', 'BEFORE', $this, 'handle_html_editform_output');
+		$controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, 'handle_action_act_preprocess');
 	}
 
 	public function handle_html_editform_output(Doku_Event &$event, $param) {
-		#FIXME: Check for permission to begin translation
+		global $ID;
 
-		# No submit button => preview, don't modify the form
-		if(!$event->data->findElementByAttribute('type', 'submit')) {
-			return;
+		if (!@file_exists(metaFN($ID, '.translate'))) {
+			# FIXME: Check for permission to begin translation
+
+			# No submit button => preview, don't modify the form
+			if(!$event->data->findElementByAttribute('type', 'submit')) {
+				return;
+			}
+
+			# Place the checkbox after minor edit checkbox or
+			# summary text box if minor edit checkbox is not present
+			$pos = $event->data->findElementByAttribute('name', 'minor');
+
+			if (!$pos) {
+				$pos = $event->data->findElementByAttribute('name', 'summary');
+			}
+
+			# Create the checkbox
+			$p = array('tabindex' => 4);
+
+			if (!empty($_REQUEST['translate'])) {
+				$p['checked'] = 'checked';
+			}
+
+			$elem = form_makeCheckboxField('translate', '1', $this->lang['translate_begin'], 'translate_begin', 'nowrap', $p);
+
+			# Insert checkbox into the form
+			$event->data->insertElement(++$pos, $elem);
 		}
+	}
 
-		# Place the checkbox after minor edit checkbox or summary
-		# text box if minor edit checkbox is not present
-		$pos = $event->data->findElementByAttribute('name', 'minor');
+	public function handle_action_act_preprocess(Doku_Event &$event, $param) {
+		global $ID;
 
-		if (!$pos) {
-			$pos = $event->data->findElementByAttribute('name', 'summary');
+		# FIXME: Handle edits and reverts
+		$act = act_clean($event->data);
+
+		if ($act == 'save') {
+			# Take over save action if translation is in progress
+			# or we're starting it
+			if (!@file_exists(metaFN($ID, '.translate')) && empty($_REQUEST['translate'])) {
+				return;
+			}
+
+			if (!checkSecurityToken()) {
+				return;
+			}
+
+			# We're starting a translation
+			if (!@file_exists(metaFN($ID, '.translate')) && !empty($_REQUEST['translate'])) {
+				global $ACT;
+				global $SUM;
+
+				# Take the event over
+				$event->stopPropagation();
+				$event->preventDefault();
+
+				# Save the data but exit if it fails
+				$ACT = act_save($act);
+
+				if ($ACT != 'show') {
+					return;
+				}
+
+				# Page was deleted, exit
+				if (!@file_exists(wikiFN($ID))) {
+					return;
+				}
+
+				# Prepare data path
+				$datapath = dirname(wikiFN($ID)) . '/_' . noNS($ID);
+				io_mkdir_p($datapath, 0755, true);
+
+				# Backup the original page
+				io_rename(wikiFN($ID), $datapath . '/orig.txt');
+
+				# Backup old revisions
+				$revisions = allRevisions($ID);
+
+				foreach ($revisions as $rev) {
+					$tmp = wikiFN($ID, $rev);
+					io_rename($tmp, $datapath . '/' . basename($tmp));
+				}
+
+				# Backup meta files
+				$metas = metaFiles($ID);
+
+				foreach ($metas as $f) {
+					io_rename($f, $datapath . '/' . basename($f));
+				}
+
+				# Generate empty page to hold translated text
+				$data = genTranslateFile($datapath . '/orig.txt');
+				saveWikiText($ID, implode('', $data), $SUM, $_REQUEST['minor']);
+
+				$translateMeta = genMeta(count($data));
+				# create meta file for current translation state
+				io_saveFile(metaFN($ID, '.translate'), serialize($translateMeta));
+				# create separate meta file for translation history
+				io_saveFile(metaFN($ID, '.translateHistory'), serialize(array('current' => $translateMeta)));
+			}
 		}
-
-		# Create the checkbox
-		$p = array('tabindex' => 4);
-
-		if (!empty($_REQUEST['translate'])) {
-			$p['checked'] = 'checked';
-		}
-
-		$elem = form_makeCheckboxField('translate', '1', $this->lang['translate_begin'], 'translate_begin', 'nowrap', $p);
-
-		# Insert checkbox into the form
-		$event->data->insertElement(++$pos, $elem);
 	}
 }
 
