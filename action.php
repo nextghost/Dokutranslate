@@ -115,6 +115,7 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 		# FIXME: Handle edits and reverts
 		$act = act_clean($event->data);
+		$act = act_permcheck($act);
 
 		if ($act == 'save') {
 			# Take over save action if translation is in progress
