@@ -14,6 +14,7 @@ if (!defined('DOKU_TAB')) define('DOKU_TAB', "\t");
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
 require_once DOKU_PLUGIN.'action.php';
+require_once 'utils.php';
 
 function allRevisions($id) {
 	$ret = array();
@@ -31,25 +32,12 @@ function allRevisions($id) {
 	return $ret;
 }
 
-function genTranslateFile($inputFile) {
-	$ret = array();
+function genTranslateFile($ins) {
+	$ret = '';
 	$par = "~~DOKUTRANSLATE_PARAGRAPH~~\n";
-	$lines = @file($inputFile);
 
-	if (!$lines) {
-		return ret;
-	}
-
-	$parOpen = true;
-
-	# Add another markup line on first line of every paragraph
-	foreach ($lines as $line) {
-		if (trim($line) == '') {
-			$parOpen = true;
-		} else if ($parOpen) {
-			$ret[] = $par;
-			$parOpen = false;
-		}
+	for ($i = 0; $i < count($ins) - 1; $i++) {
+		$ret .= $par;
 	}
 
 	return $ret;
@@ -172,8 +160,8 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				}
 
 				# Generate empty page to hold translated text
-				$data = genTranslateFile($datapath . '/orig.txt');
-				saveWikiText($ID, implode('', $data), $SUM, $_REQUEST['minor']);
+				$data = getCleanInstructions($datapath . '/orig.txt');
+				saveWikiText($ID, genTranslateFile($data), $SUM, $_REQUEST['minor']);
 
 				$translateMeta = genMeta(count($data));
 				# create meta file for current translation state
