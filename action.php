@@ -33,12 +33,14 @@ function allRevisions($id) {
 }
 
 function genTranslateFile($ins) {
-	$ret = '';
+	$ret = "~~DOKUTRANSLATE_START~~\n";
 	$par = "~~DOKUTRANSLATE_PARAGRAPH~~\n";
 
 	for ($i = 0; $i < count($ins) - 1; $i++) {
 		$ret .= $par;
 	}
+
+	$ret .= "~~DOKUTRANSLATE_END~~\n";
 
 	return $ret;
 }
@@ -62,7 +64,9 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 	public function register(Doku_Event_Handler &$controller) {
 		$this->setupLocale();
 		$controller->register_hook('HTML_EDITFORM_OUTPUT', 'BEFORE', $this, 'handle_html_editform_output');
+		$controller->register_hook('HTML_SECEDIT_BUTTON', 'BEFORE', $this, 'handle_disabled');
 		$controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, 'handle_action_act_preprocess');
+		$controller->register_hook('PARSER_HANDLER_DONE', 'BEFORE', $this, 'handle_parser_handler_done');
 	}
 
 	public function handle_html_editform_output(Doku_Event &$event, $param) {
@@ -170,6 +174,37 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				io_saveFile(metaFN($ID, '.translateHistory'), serialize(array('current' => $translateMeta)));
 			}
 		}
+	}
+
+	public function handle_parser_handler_done(Doku_Event &$event, $param) {
+		global $ID;
+		$erase = array('section_open', 'section_close');
+
+		# Exit if the page is not being translated
+		if (!@file_exists(metaFN($ID, '.translate'))) {
+			return;
+		}
+
+		$length = count($event->data->calls);
+
+		# Erase section instructions from the instruction list
+		for ($i = 0; $i < $length; $i++) {
+			if (in_array($event->data->calls[$i][0], $erase)) {
+				unset($event->data->calls[$i]);
+			}
+		}
+	}
+
+	# Generic event eater
+	public function handle_disabled(Doku_Event &$event, $param) {
+		global $ID;
+
+		# Translation in progress, eat the event
+		if (@file_exists(metaFN($ID, '.translate'))) {
+			$event->preventDefault();
+		}
+
+		return;
 	}
 }
 
