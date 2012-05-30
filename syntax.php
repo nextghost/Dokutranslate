@@ -19,6 +19,8 @@ require_once DOKU_PLUGIN.'syntax.php';
 $DOKUTRANSLATE_NEST = 0;
 
 class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
+	private $origIns = NULL;
+
 	public function getType() {
 		return 'container';
 	}
@@ -36,7 +38,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	}
 
 	public function isSingleton() {
-		return false;
+		return true;
 	}
 
 	public function connectTo($mode) {
@@ -76,23 +78,52 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	}
 
 	public function render($mode, &$renderer, $data) {
+		global $ID;
+
 		if($mode != 'xhtml') return false;
 
+		# Load instructions for original text on first call
+		if (is_null($this->origIns)) {
+			$DOKUTRANSLATE_NEST++;
+			$this->origIns = getCleanInstructions(dataPath($ID) . '/orig.txt');
+			$DOKUTRANSLATE_NEST--;
+		}
+
 		switch ($data[0]) {
+		# Open the table
 		case DOKU_LEXER_ENTER:
-			$renderer->doc .= '<table><tbody><tr><td>';
+			$renderer->doc .= '<table width="100%"><tbody><tr><td width="50%">';
 			break;
 
+		# Dump original text and close the row
 		case DOKU_LEXER_SPECIAL:
-			# FIXME: Include original text
+			$renderer->doc .= '</td><td>';
+
+			# If this condition fails, somebody's been messing
+			# with the data
+			if (current($this->origIns) !== FALSE) {
+				$renderer->nest(current($this->origIns));
+				next($this->origIns);
+			}
+
 			$renderer->doc .= '</td></tr><tr><td>';
 			break;
 
+		# Dump the rest of the original text and close the table
 		case DOKU_LEXER_EXIT:
-			# FIXME: Include original text
+			$renderer->doc .= '</td><td>';
+
+			# Loop to make sure all remaining text gets dumped
+			# (external edit safety)
+			while (current($this->origIns) !== FALSE) {
+				$renderer->nest(current($this->origIns));
+				next($this->origIns);
+			}
+
 			$renderer->doc .= '</td></tr></tbody></table>';
 			break;
 
+		# Just sanitize and dump the text
 		default:
 			$renderer->doc .= $renderer->_xmlEntities($data[1]);
 			break;

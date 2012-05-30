@@ -142,7 +142,7 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				}
 
 				# Prepare data path
-				$datapath = dirname(wikiFN($ID)) . '/_' . noNS($ID);
+				$datapath = dataPath($ID);
 				io_mkdir_p($datapath, 0755, true);
 
 				# Backup the original page

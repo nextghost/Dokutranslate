@@ -43,4 +43,8 @@ function getCleanInstructions($file) {
 	return $ret;
 }
 
+function dataPath($id) {
+	return dirname(wikiFN($id)) . '/_' . noNS($id);
+}
+
 // vim:ts=4:sw=4:et:
