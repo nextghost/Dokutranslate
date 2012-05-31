@@ -18,8 +18,28 @@ require_once DOKU_PLUGIN.'syntax.php';
 # Nesting counter, patterns disabled when non-zero
 $DOKUTRANSLATE_NEST = 0;
 
+# Generate edit button for paragraph
+function parEditButton($parId) {
+	global $ID;
+	global $INFO;
+
+	$ret = '';
+
+	$params = array(
+		'do' => 'edit',
+		'rev' => $INFO['lastmod'],
+		'parid' => $parId,
+	);
+
+	$ret .= '<div class="secedit editbutton_par' . strval($parId) . '">';
+	$ret .= html_btn('secedit', $ID, '', $params, 'post');
+	$ret .= '</div>';
+	return $ret;
+}
+
 class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	private $origIns = NULL;
+	private $parCounter = 0;
 
 	public function getType() {
 		return 'container';
@@ -82,6 +102,8 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	public function render($mode, &$renderer, $data) {
 		global $DOKUTRANSLATE_NEST;
 		global $ID;
+		global $ACT;
+		global $INFO;
 
 		if($mode != 'xhtml') return false;
 
@@ -89,18 +111,24 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		if (is_null($this->origIns)) {
 			$DOKUTRANSLATE_NEST++;
 			$this->origIns = getCleanInstructions(dataPath($ID) . '/orig.txt');
+			$this->parCounter = 0;
 			$DOKUTRANSLATE_NEST--;
 		}
 
 		switch ($data[0]) {
 		# Open the table
 		case DOKU_LEXER_ENTER:
-			$renderer->doc .= '<table width="100%"><tbody><tr><td width="50%">';
+			$renderer->doc .= '<table width="100%" class="dokutranslate"><tbody><tr><td width="50%">';
 			break;
 
 		# Dump original text and close the row
 		case DOKU_LEXER_SPECIAL:
-			$renderer->doc .= '</td><td>';
+			# Generate edit button
+			if ($ACT == 'show') {
+				$renderer->doc .= parEditButton($this->parCounter);
+			}
+
+			$renderer->doc .= "</td>\n<td>";
 
 			# If this condition fails, somebody's been messing
 			# with the data
@@ -109,12 +137,18 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 				next($this->origIns);
 			}
 
-			$renderer->doc .= '</td></tr><tr><td>';
+			$renderer->doc .= "</td></tr>\n<tr><td>";
+			$this->parCounter++;
 			break;
 
 		# Dump the rest of the original text and close the table
 		case DOKU_LEXER_EXIT:
-			$renderer->doc .= '</td><td>';
+			# Generate edit button
+			if ($ACT == 'show') {
+				$renderer->doc .= parEditButton($this->parCounter);
+			}
+
+			$renderer->doc .= "</td>\n<td>";
 
 			# Loop to make sure all remaining text gets dumped
 			# (external edit safety)

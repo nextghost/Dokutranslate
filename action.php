@@ -14,6 +14,8 @@ if (!defined('DOKU_TAB')) define('DOKU_TAB', "\t");
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
 require_once DOKU_PLUGIN.'action.php';
+# Needed for lexer state constants used in syntax plugin instructions
+require_once DOKU_INC.'inc/parser/lexer.php';
 require_once 'utils.php';
 
 function allRevisions($id) {
@@ -33,14 +35,14 @@ function allRevisions($id) {
 }
 
 function genTranslateFile($ins) {
-	$ret = "~~DOKUTRANSLATE_START~~\n";
-	$par = "~~DOKUTRANSLATE_PARAGRAPH~~\n";
+	$ret = "~~DOKUTRANSLATE_START~~\n\n";
+	$par = "~~DOKUTRANSLATE_PARAGRAPH~~\n\n";
 
 	for ($i = 0; $i < count($ins) - 1; $i++) {
 		$ret .= $par;
 	}
 
-	$ret .= "~~DOKUTRANSLATE_END~~\n";
+	$ret .= "~~DOKUTRANSLATE_END~~";
 
 	return $ret;
 }
@@ -104,6 +106,10 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 	public function handle_action_act_preprocess(Doku_Event &$event, $param) {
 		global $ID;
+		global $TEXT;
+		global $ACT;
+		global $SUM;
+		global $RANGE;
 
 		# FIXME: Handle edits and reverts
 		$act = act_clean($event->data);
@@ -122,9 +128,6 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 			# We're starting a translation
 			if (!@file_exists(metaFN($ID, '.translate')) && !empty($_REQUEST['translate'])) {
-				global $ACT;
-				global $SUM;
-
 				# Take the event over
 				$event->stopPropagation();
 				$event->preventDefault();
@@ -173,6 +176,29 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				# create separate meta file for translation history
 				io_saveFile(metaFN($ID, '.translateHistory'), serialize(array('current' => $translateMeta)));
 			}
+		} else if (in_array($act, array('edit', 'preview', 'recover'))) {
+			if (!@file_exists(metaFN($ID, '.translate')) || isset($TEXT)) {
+				return;
+			}
+
+			$parid = isset($_REQUEST['parid']) ? intval($_REQUEST['parid']) : 0;
+			$instructions = p_cached_instructions(wikiFN($ID));
+			$separators = array();
+
+			# Build array of paragraph separators
+			foreach ($instructions as $ins) {
+				if ($ins[0] == 'plugin' && $ins[1][0] == 'dokutranslate' && in_array($ins[1][1][0], array(DOKU_LEXER_ENTER, DOKU_LEXER_SPECIAL, DOKU_LEXER_EXIT))) {
+					$separators[] = $ins[1][1];
+				}
+			}
+
+			# Validate paragraph ID
+			if ($parid >= count($separators) - 1) {
+				$parid = 0;
+			}
+
+			# Build range for paragraph
+			$RANGE = strval($separators[$parid][2] + 1) . '-' . strval($separators[$parid + 1][1] - 1);
 		}
 	}
 

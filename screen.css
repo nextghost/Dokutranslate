@@ -1,0 +1,11 @@
+/**
+ * DokuWiki Plugin dokutranslate (Screen stylesheet)
+ *
+ * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
+ * @author  Martin Doucha <next_ghost@quick.cz>
+ */
+
+table.dokutranslate td {
+	padding: 5px;
+	vertical-align: top;
+}
