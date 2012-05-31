@@ -42,6 +42,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	}
 
 	public function connectTo($mode) {
+		global $DOKUTRANSLATE_NEST;
 		global $ID;
 
 		# Disable patterns when the page is not being translated or
@@ -55,6 +56,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	}
 
 	public function postConnect() {
+		global $DOKUTRANSLATE_NEST;
 		global $ID;
 
 		# Disable patterns when the page is not being translated or
@@ -78,6 +80,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	}
 
 	public function render($mode, &$renderer, $data) {
+		global $DOKUTRANSLATE_NEST;
 		global $ID;
 
 		if($mode != 'xhtml') return false;
