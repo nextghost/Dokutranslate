@@ -13,6 +13,8 @@ if (!defined('DOKU_LF')) define('DOKU_LF', "\n");
 if (!defined('DOKU_TAB')) define('DOKU_TAB', "\t");
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
+$DOKUTRANSLATE_EDITFORM = '';
+
 # Read cleaned instructions for file and group them by paragraphs
 function getCleanInstructions($file) {
 	$instructions = p_cached_instructions($file);
@@ -45,6 +47,10 @@ function getCleanInstructions($file) {
 
 function dataPath($id) {
 	return dirname(wikiFN($id)) . '/_' . noNS($id);
+}
+
+function getParID() {
+	return isset($_REQUEST['parid']) ? intval($_REQUEST['parid']) : 0;
 }
 
 // vim:ts=4:sw=4:et:

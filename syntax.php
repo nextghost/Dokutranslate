@@ -37,6 +37,39 @@ function parEditButton($parId) {
 	return $ret;
 }
 
+function startEditForm(&$renderer, $erase = true) {
+	global $DOKUTRANSLATE_EDITFORM;
+	global $DOKUTRANSLATE_NEST;
+	global $ACT;
+	global $TEXT;
+
+	# Insert saved edit form
+	$renderer->doc .= '<div class="preview" id="scroll__here">';
+	$renderer->doc .= $DOKUTRANSLATE_EDITFORM;
+
+	# Render preview from submitted text (the saved page may look different
+	# if dokutranslate markup is present in the text)
+	if ($ACT == 'preview') {
+		$renderer->doc .= p_locale_xhtml('preview');
+		$DOKUTRANSLATE_NEST++;
+		$previewIns = p_get_instructions($TEXT);
+		$DOKUTRANSLATE_NEST--;
+		$renderer->nest($previewIns);
+	}
+
+	$renderer->doc .= '</div>';
+
+	if ($erase) {
+		# Insert erasure start marker
+		$renderer->doc .= '<!-- DOKUTRANSLATE ERASE START -->';
+	}
+}
+
+function endEditForm(&$renderer) {
+	# Insert erasure end marker
+	$renderer->doc .= '<!-- DOKUTRANSLATE ERASE STOP -->';
+}
+
 class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	private $origIns = NULL;
 	private $parCounter = 0;
@@ -103,7 +136,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		global $DOKUTRANSLATE_NEST;
 		global $ID;
 		global $ACT;
-		global $INFO;
+		global $TEXT;
 
 		if($mode != 'xhtml') return false;
 
@@ -119,6 +152,12 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		# Open the table
 		case DOKU_LEXER_ENTER:
 			$renderer->doc .= '<table width="100%" class="dokutranslate"><tbody><tr><td width="50%">';
+
+			# Insert edit form if we're editing the first paragraph
+			if (in_array($ACT, array('edit', 'preview')) && getParID() == 0) {
+				startEditForm($renderer);
+			}
+
 			break;
 
 		# Dump original text and close the row
@@ -126,6 +165,9 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			# Generate edit button
 			if ($ACT == 'show') {
 				$renderer->doc .= parEditButton($this->parCounter);
+			# Finish erasure if we're editing this paragraph
+			} else if (in_array($ACT, array('edit', 'preview')) && getParID() == $this->parCounter) {
+				endEditForm($renderer);
 			}
 
 			$renderer->doc .= "</td>\n<td>";
@@ -139,6 +181,12 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 
 			$renderer->doc .= "</td></tr>\n<tr><td>";
 			$this->parCounter++;
+
+			# Insert edit form if we're editing this paragraph
+			if (in_array($ACT, array('edit', 'preview')) && getParID() == $this->parCounter) {
+				startEditForm($renderer);
+			}
+
 			break;
 
 		# Dump the rest of the original text and close the table
@@ -146,6 +194,16 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			# Generate edit button
 			if ($ACT == 'show') {
 				$renderer->doc .= parEditButton($this->parCounter);
+			# Finish erasure if we're editing the last paragraph
+			} else if (in_array($ACT, array('edit', 'preview'))) {
+				$parid = getParID();
+
+				if ($parid == $this->parCounter) {
+					endEditForm($renderer);
+				# Invalid paragraph ID, show form here
+				} else if ($parid > $this->parCounter) {
+					startEditForm($renderer, true);
+				}
 			}
 
 			$renderer->doc .= "</td>\n<td>";

@@ -69,6 +69,8 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		$controller->register_hook('HTML_SECEDIT_BUTTON', 'BEFORE', $this, 'handle_disabled');
 		$controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, 'handle_action_act_preprocess');
 		$controller->register_hook('PARSER_HANDLER_DONE', 'BEFORE', $this, 'handle_parser_handler_done');
+		$controller->register_hook('TPL_ACT_RENDER', 'BEFORE', $this, 'handle_tpl_act_render');
+		$controller->register_hook('TPL_CONTENT_DISPLAY', 'BEFORE', $this, 'handle_tpl_content_display');
 	}
 
 	public function handle_html_editform_output(Doku_Event &$event, $param) {
@@ -101,6 +103,9 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 			# Insert checkbox into the form
 			$event->data->insertElement(++$pos, $elem);
+		} else {
+			# Translation in progress, add paragraph ID to the form
+			$event->data->addHidden('parid', strval(getParID()));
 		}
 	}
 
@@ -176,12 +181,12 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				# create separate meta file for translation history
 				io_saveFile(metaFN($ID, '.translateHistory'), serialize(array('current' => $translateMeta)));
 			}
-		} else if (in_array($act, array('edit', 'preview', 'recover'))) {
+		} else if (in_array($act, array('edit', 'preview'))) {
 			if (!@file_exists(metaFN($ID, '.translate')) || isset($TEXT)) {
 				return;
 			}
 
-			$parid = isset($_REQUEST['parid']) ? intval($_REQUEST['parid']) : 0;
+			$parid = getParID();
 			$instructions = p_cached_instructions(wikiFN($ID));
 			$separators = array();
 
@@ -219,6 +224,43 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				unset($event->data->calls[$i]);
 			}
 		}
+	}
+
+	# Hijack edit page rendering
+	public function handle_tpl_act_render(Doku_Event &$event, $param) {
+		global $ID;
+		global $INFO;
+		global $DOKUTRANSLATE_EDITFORM;
+
+		if (!@file_exists(metaFN($ID, '.translate'))) {
+			return;
+		}
+
+		if (in_array($event->data, array('edit', 'preview'))) {
+			# Take the event over
+			$event->preventDefault();
+
+			# Save the edit form for later
+			html_edit();
+			$DOKUTRANSLATE_EDITFORM = ob_get_clean();
+			ob_start();
+
+			# Render the page (renderer inserts saved edit form
+			# and preview in the right cell)
+			echo p_render('xhtml', p_cached_instructions(wikiFN($ID)), $INFO);
+		}
+	}
+
+	# Erase content replaced by edit form
+	public function handle_tpl_content_display(Doku_Event &$event, $param) {
+		global $ID;
+
+		if (!@file_exists(metaFN($ID, '.translate'))) {
+			return;
+		}
+
+		# Erase everything between markers
+		$event->data = preg_replace("/<!-- DOKUTRANSLATE ERASE START -->.*<!-- DOKUTRANSLATE ERASE STOP -->/sm", '', $event->data);
 	}
 
 	# Generic event eater
