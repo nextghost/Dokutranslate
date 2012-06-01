@@ -236,6 +236,9 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 			return;
 		}
 
+		# Disable TOC on translated pages
+		$INFO['prependTOC'] = false;
+
 		if (in_array($event->data, array('edit', 'preview'))) {
 			# Take the event over
 			$event->preventDefault();
