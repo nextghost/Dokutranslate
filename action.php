@@ -120,6 +120,13 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		$act = act_clean($event->data);
 		$act = act_permcheck($act);
 
+		# Ignore drafts if the page is being translated
+		# FIXME: Find a way to save $_REQUEST['parid'] into the draft
+		if (@file_exists(metaFN($ID, '.translate')) && in_array($act, array('draft', 'recover'))) {
+			act_draftdel('draftdel');
+			$ACT = $act = 'edit';
+		}
+
 		if ($act == 'save') {
 			# Take over save action if translation is in progress
 			# or we're starting it
