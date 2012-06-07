@@ -1,0 +1,30 @@
+div#dokutranslate_manager div#dokutranslate__tree {
+    float: right;
+    text-align: right;
+}
+
+div#dokutranslate_manager div#dokutranslate__tree li {
+    padding-left: 0em;
+    padding-right: 1em;
+}
+
+div#dokutranslate_manager div#dokutranslate__tree ul img {
+    margin-left: 0.25em;
+    margin-right: 0em;
+}
+
+
+div#dokutranslate_manager div#dokutranslate__detail {
+    float: left;
+}
+
+div#dokutranslate_manager .dokutranslategroup {
+    background: transparent url(pix/group.png) right 1px no-repeat;
+    padding: 1px 18px 1px 0px;
+}
+
+div#dokutranslate_manager .dokutranslatens {
+    background: transparent url(pix/ns.png) right 1px no-repeat;
+    padding: 1px 18px 1px 0px;
+}
+

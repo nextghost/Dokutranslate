@@ -12,5 +12,11 @@
 // $lang['fixme'] = 'FIXME';
 
 $lang['translate_begin'] = 'Begin translation (cannot be reverted)';
+$lang['admin_dokutranslate'] = 'Dokutranslate Moderator Group Management';
+$lang['current'] = 'Current Moderator Group Assignment';
+$lang['modgroup'] = 'Moderator Group:';
+$lang['where'] = 'Namespace';
+$lang['who'] = 'Moderator Group';
+$lang['delsel'] = 'Delete Selected';
 
 //Setup VIM: ex: et ts=4 :

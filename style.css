@@ -1,0 +1,73 @@
+
+div#dokutranslate_manager div#dokutranslate__tree {
+    font-size: 90%;
+    width: 25%;
+    height: 300px;
+    float: left;
+    overflow: auto;
+    border: 1px solid __border__;
+    text-align: left;
+}
+
+div#dokutranslate_manager div#dokutranslate__tree a.cur {
+    background-color: __highlight__;
+    font-weight: bold;
+}
+
+div#dokutranslate_manager div#dokutranslate__tree ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+div#dokutranslate_manager div#dokutranslate__tree li {
+    padding-left: 1em;
+    list-style-image: none;
+}
+
+div#dokutranslate_manager div#dokutranslate__tree ul img {
+    margin-right: 0.25em;
+    cursor: pointer;
+}
+
+div#dokutranslate_manager div#dokutranslate__detail {
+    width: 73%;
+    height: 300px;
+    float: right;
+    overflow: auto;
+}
+
+div#dokutranslate_manager div#dokutranslate__detail div#dokutranslate__user {
+    border: 1px solid __border__;
+    padding: 0.5em;
+    margin-bottom: 0.6em;
+}
+
+div#dokutranslate_manager table.inline {
+    width: 100%;
+    margin: 0;
+}
+
+div#dokutranslate_manager .dokutranslategroup {
+    background: transparent url(pix/group.png) 0px 1px no-repeat;
+    padding: 1px 0px 1px 18px;
+}
+
+div#dokutranslate_manager .dokutranslatens {
+    background: transparent url(pix/ns.png) 0px 1px no-repeat;
+    padding: 1px 0px 1px 18px;
+}
+
+#dokutranslate_manager table {
+  margin-left: 10%;
+  width: 80%;
+}
+
+#dokutranslate_manager table tr {
+    background-color: inherit;
+}
+
+#dokutranslate_manager table tr:hover {
+    background-color: __background_alt__;
+}
+
