@@ -77,7 +77,10 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		global $ID;
 
 		if (!@file_exists(metaFN($ID, '.translate'))) {
-			# FIXME: Check for permission to begin translation
+			# Check permissions to begin translation
+			if (!isModerator($ID)) {
+				return;
+			}
 
 			# No submit button => preview, don't modify the form
 			if(!$event->data->findElementByAttribute('type', 'submit')) {
@@ -140,6 +143,12 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 			# We're starting a translation
 			if (!@file_exists(metaFN($ID, '.translate')) && !empty($_REQUEST['translate'])) {
+				# Check if the user has permission to start
+				# translation in this namespace
+				if (!isModerator($ID)) {
+					return;
+				}
+
 				# Take the event over
 				$event->stopPropagation();
 				$event->preventDefault();

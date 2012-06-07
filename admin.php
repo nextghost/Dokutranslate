@@ -17,13 +17,7 @@ if (!defined('DOKU_TAB')) define('DOKU_TAB', "\t");
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
 require_once DOKU_PLUGIN.'admin.php';
-define('DOKUTRANSLATE_MODLIST', DOKU_INC . 'conf/dokutranslate.modlist.conf');
-
-function loadModlist() {
-	$ret = @file(DOKUTRANSLATE_MODLIST);
-
-	return $ret === false ? array() : $ret;
-}
+require_once 'utils.php';
 
 /**
  * All DokuWiki plugins to extend the admin function
@@ -319,21 +313,8 @@ class admin_plugin_dokutranslate extends DokuWiki_Admin_Plugin {
      */
 	function _init_acl_config(){
 		global $AUTH_ACL;
-		global $conf;
-		$acl_config=array();
 
-		foreach($AUTH_ACL as $line){
-			$line = trim(preg_replace('/#.*$/','',$line)); //ignore comments
-			if(!$line) continue;
-
-			$acl = preg_split('/\s+/',$line);
-			//0 is pagename, 1 is user, 2 is acl
-
-			$acl[1] = rawurldecode($acl[1]);
-			$acl_config[$acl[0]] = $acl[1];
-		}
-
-		$this->acl = $acl_config;
+		$this->acl = parseModlist($AUTH_ACL);
 	}
 
     /**

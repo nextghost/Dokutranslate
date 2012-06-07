@@ -13,6 +13,8 @@ if (!defined('DOKU_LF')) define('DOKU_LF', "\n");
 if (!defined('DOKU_TAB')) define('DOKU_TAB', "\t");
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
+define('DOKUTRANSLATE_MODLIST', DOKU_INC . 'conf/dokutranslate.modlist.conf');
+
 $DOKUTRANSLATE_EDITFORM = '';
 
 # Read cleaned instructions for file and group them by paragraphs
@@ -51,6 +53,58 @@ function dataPath($id) {
 
 function getParID() {
 	return isset($_REQUEST['parid']) ? intval($_REQUEST['parid']) : 0;
+}
+
+# Read the modlist file and return array of lines
+function loadModlist() {
+	$ret = @file(DOKUTRANSLATE_MODLIST);
+
+	return $ret === false ? array() : $ret;
+}
+
+# Parse array of modlist lines and return array(ns => modgroup)
+function parseModlist($lines) {
+	$ret = array();
+
+	foreach ($lines as $line) {
+		$line = trim(preg_replace('/#.*$/', '', $line)); //ignore comments
+		if (!$line) {
+			continue;
+		}
+
+		$entry = preg_split('/\s+/', $line);
+		$entry[1] = rawurldecode($entry[1]);
+		$ret[$entry[0]] = $entry[1];
+	}
+
+	return $ret;
+}
+
+# Check if current user has moderator privileges for given page ID
+function isModerator($id) {
+	global $USERINFO;
+	static $modlist = NULL;
+
+	if (is_null($modlist)) {
+		$modlist = parseModlist(loadModlist());
+	}
+
+	# Check nearest non-root parent namespace
+	for ($ns = getNS($id); $ns; $ns = getNS($ns)) {
+		$wildcard = $ns . ':*';
+
+		if (!empty($modlist[$wildcard])) {
+			return in_array($modlist[$wildcard], $USERINFO['grps']);
+		}
+	}
+
+	# Check root namespace
+	if (!empty($modlist['*'])) {
+		return in_array($modlist['*'], $USERINFO['grps']);
+	}
+
+	# No moderator group set for any of parent namespaces
+	return false;
 }
 
 // vim:ts=4:sw=4:et:
