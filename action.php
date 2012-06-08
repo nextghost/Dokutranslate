@@ -61,7 +61,7 @@ function genMeta($lineCount) {
 	return $ret;
 }
 
-function updateMeta($id, $parid, $lastrev) {
+function updateMeta($id, $parid, $lastrev, $revert = -1) {
 	$meta = unserialize(io_readFile(metaFN($id, '.translateHistory'), false));
 
 	for ($i = 0; $i < count($meta['current']); $i++) {
@@ -77,11 +77,31 @@ function updateMeta($id, $parid, $lastrev) {
 		}
 	}
 
-	# Reset entry for changed paragraph
-	$meta['current'][$parid]['changed'] = '';
-	$meta['current'][$parid]['ip'] = clientIP(true);
-	$meta['current'][$parid]['user'] = isset($_SERVER['REMOTE_USER']) ? $_SERVER['REMOTE_USER'] : '';
-	$meta['current'][$parid]['reviews'] = array();
+	$revert = intval($revert);
+
+	if ($revert < 0) {
+		# Saving new data, reset entry for changed paragraph
+		$meta['current'][$parid]['changed'] = '';
+		$meta['current'][$parid]['ip'] = clientIP(true);
+		$meta['current'][$parid]['user'] = isset($_SERVER['REMOTE_USER']) ? $_SERVER['REMOTE_USER'] : '';
+		$meta['current'][$parid]['reviews'] = array();
+	} else {
+		# Reverting old revision, restore metadata of reverted page
+		for ($i = 0; $i < count($meta['current']); $i++) {
+			if (empty($meta[$revert][$i]['changed'])) {
+				# Paragraph last changed in the reverted
+				# revision
+				$meta['current'][$i] = $meta[$revert][$i];
+				$meta['current'][$i]['changed'] = $revert;
+			} else {
+				# Paragraph last changed in even earlier
+				# revision
+				$tmp = $meta[$revert][$i]['changed'];
+				$meta['current'][$i] = $meta[$tmp][$i];
+				$meta['current'][$i]['changed'] = $tmp;
+			}
+		}
+	}
 
 	# Save metadata
 	io_saveFile(metaFN($id, '.translateHistory'), serialize($meta));
@@ -145,6 +165,7 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		global $ACT;
 		global $SUM;
 		global $RANGE;
+		global $REV;
 
 		# FIXME: Handle edits and reverts
 		$act = act_clean($event->data);
@@ -236,9 +257,34 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				}
 
 				# Save successful, update translation metadata
-				$lastrev = getRevisions($ID, -1, 1, 1024);
+				$lastrev = getRevisions($ID, 0, 1, 1024);
 				updateMeta($ID, getParID(), $lastrev[0]);
 			}
+		} else if ($act == 'revert') {
+			# Take over save action if translation is in progress
+			if (!@file_exists(metaFN($ID, '.translate'))) {
+				return;
+			}
+
+			if (!checkSecurityToken()) {
+				return;
+			}
+
+			# Translation in progress, take the event over
+			$event->preventDefault();
+
+			# Save the data but exit if it fails
+			$revert = $REV;
+			$ACT = act_revert($act);
+
+			# Revert failed, exit
+			if ($ACT != 'show') {
+				return;
+			}
+
+			# Revert successful, update translation metadata
+			$lastrev = getRevisions($ID, 0, 1, 1024);
+			updateMeta($ID, getParID(), $lastrev[0], $revert);
 		} else if (in_array($act, array('edit', 'preview'))) {
 			if (!@file_exists(metaFN($ID, '.translate')) || isset($TEXT)) {
 				return;
