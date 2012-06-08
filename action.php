@@ -61,6 +61,33 @@ function genMeta($lineCount) {
 	return $ret;
 }
 
+function updateMeta($id, $parid, $lastrev) {
+	$meta = unserialize(io_readFile(metaFN($id, '.translateHistory'), false));
+
+	for ($i = 0; $i < count($meta['current']); $i++) {
+		if (!empty($meta['current'][$i]['changed'])) {
+			# This paragraph was not changed in the last revision,
+			# copy last change entry only
+			$meta[$lastrev][$i]['changed'] = $meta['current'][$i]['changed'];
+		} else {
+			# This paragraph has been changed, copy full entry
+			# and set revision pointer
+			$meta[$lastrev][$i] = $meta['current'][$i];
+			$meta['current'][$i]['changed'] = $lastrev;
+		}
+	}
+
+	# Reset entry for changed paragraph
+	$meta['current'][$parid]['changed'] = '';
+	$meta['current'][$parid]['ip'] = clientIP(true);
+	$meta['current'][$parid]['user'] = isset($_SERVER['REMOTE_USER']) ? $_SERVER['REMOTE_USER'] : '';
+	$meta['current'][$parid]['reviews'] = array();
+
+	# Save metadata
+	io_saveFile(metaFN($id, '.translateHistory'), serialize($meta));
+	io_saveFile(metaFN($id, '.translate'), serialize($meta['current']));
+}
+
 class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 	public function register(Doku_Event_Handler &$controller) {
@@ -196,6 +223,21 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				io_saveFile(metaFN($ID, '.translate'), serialize($translateMeta));
 				# create separate meta file for translation history
 				io_saveFile(metaFN($ID, '.translateHistory'), serialize(array('current' => $translateMeta)));
+			} else {
+				# Translation in progress, take the event over
+				$event->preventDefault();
+
+				# Save the data but exit if it fails
+				$ACT = act_save($act);
+
+				# Save failed, exit
+				if ($ACT != 'show') {
+					return;
+				}
+
+				# Save successful, update translation metadata
+				$lastrev = getRevisions($ID, -1, 1, 1024);
+				updateMeta($ID, getParID(), $lastrev[0]);
 			}
 		} else if (in_array($act, array('edit', 'preview'))) {
 			if (!@file_exists(metaFN($ID, '.translate')) || isset($TEXT)) {
