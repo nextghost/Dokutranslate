@@ -353,7 +353,8 @@ class admin_plugin_dokutranslate extends DokuWiki_Admin_Plugin {
 			echo '</td>';
 			
 			echo '<td align="center">';
-			echo '<input type="checkbox" name="del[]" value="'.hsc($where).'" />';
+			echo '<input type="hidden" name="acl['.hsc($where).']" value="'.hsc($who).'" />';
+			echo '<input type="checkbox" name="del" value="'.hsc($where).'" />';
 			echo '</td>';
 			echo '</tr>';
 		}
