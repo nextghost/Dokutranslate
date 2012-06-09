@@ -137,6 +137,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		global $ID;
 		global $ACT;
 		global $TEXT;
+		global $REV;
 
 		if($mode != 'xhtml') return false;
 
@@ -163,7 +164,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		# Dump original text and close the row
 		case DOKU_LEXER_SPECIAL:
 			# Generate edit button
-			if ($ACT == 'show') {
+			if ($ACT == 'show' && empty($REV)) {
 				$renderer->doc .= parEditButton($this->parCounter);
 			# Finish erasure if we're editing this paragraph
 			} else if (in_array($ACT, array('edit', 'preview')) && getParID() == $this->parCounter) {
@@ -192,7 +193,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		# Dump the rest of the original text and close the table
 		case DOKU_LEXER_EXIT:
 			# Generate edit button
-			if ($ACT == 'show') {
+			if ($ACT == 'show' && empty($REV)) {
 				$renderer->doc .= parEditButton($this->parCounter);
 			# Finish erasure if we're editing the last paragraph
 			} else if (in_array($ACT, array('edit', 'preview'))) {
