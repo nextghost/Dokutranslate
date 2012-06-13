@@ -70,8 +70,31 @@ function endEditForm(&$renderer) {
 	$renderer->doc .= '<!-- DOKUTRANSLATE ERASE STOP -->';
 }
 
+function loadTranslationMeta($id) {
+	global $REV;
+
+	# Loading meta for current version is simple
+	if (empty($REV)) {
+		return unserialize(io_readFile(metaFN($id, '.translate'), false));
+	}
+
+	# Old revision, do it the hard way...
+	$ret = array();
+	$meta = unserialize(io_readFile(metaFN($id, '.translateHistory'), false));
+	$oldrev = intval($REV);
+
+	for ($i = 0; $i < count($meta[$oldrev]); $i++) {
+		$tmp = empty($meta[$oldrev][$i]['changed']) ? $oldrev : $meta[$oldrev][$i]['changed'];
+		$ret[$i] = $meta[$tmp][$i];
+		$ret[$i]['changed'] = $tmp;
+	}
+
+	return $ret;
+}
+
 class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	private $origIns = NULL;
+	private $meta = NULL;
 	private $parCounter = 0;
 
 	public function getType() {
@@ -145,6 +168,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		if (is_null($this->origIns)) {
 			$DOKUTRANSLATE_NEST++;
 			$this->origIns = getCleanInstructions(dataPath($ID) . '/orig.txt');
+			$this->meta = loadTranslationMeta($ID);
 			$this->parCounter = 0;
 			$DOKUTRANSLATE_NEST--;
 		}
@@ -164,8 +188,12 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		# Dump original text and close the row
 		case DOKU_LEXER_SPECIAL:
 			# Generate edit button
-			if ($ACT == 'show' && empty($REV)) {
-				$renderer->doc .= parEditButton($this->parCounter);
+			if ($ACT == 'show') {
+				if (empty($REV)) {
+					$renderer->doc .= parEditButton($this->parCounter);
+				}
+
+				$renderer->doc .= $this->_renderReviews($ID, $this->meta, $this->parCounter);
 			# Finish erasure if we're editing this paragraph
 			} else if (in_array($ACT, array('edit', 'preview')) && getParID() == $this->parCounter) {
 				endEditForm($renderer);
@@ -193,8 +221,12 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		# Dump the rest of the original text and close the table
 		case DOKU_LEXER_EXIT:
 			# Generate edit button
-			if ($ACT == 'show' && empty($REV)) {
-				$renderer->doc .= parEditButton($this->parCounter);
+			if ($ACT == 'show') {
+				if (empty($REV)) {
+					$renderer->doc .= parEditButton($this->parCounter);
+				}
+
+				$renderer->doc .= $this->_renderReviews($ID, $this->meta, $this->parCounter);
 			# Finish erasure if we're editing the last paragraph
 			} else if (in_array($ACT, array('edit', 'preview'))) {
 				$parid = getParID();
@@ -226,6 +258,72 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		}
 
 		return true;
+	}
+
+	function _renderReviews($id, $meta, $parid) {
+		$mod = isModerator($id);
+
+		# No reviews and no moderator privileges => no review block
+		if (!$mod && empty($meta[$parid]['reviews'])) {
+			return '';
+		}
+
+		$ret = "<div class=\"dokutranslate_review\"><table>\n";
+
+		# Prepare review form for current user
+		if ($mod) {
+			if (isset($meta[$parid]['reviews'][$_SERVER['REMOTE_USER']])) {
+				$myReview = $meta[$parid]['reviews'][$_SERVER['REMOTE_USER']];
+			} else {
+				$myReview = array('message' => '', 'quality' => 0, 'incomplete' => false);
+			}
+
+			$form = new Doku_Form(array());
+			$form->addElement(form_makeTextField('review', $myReview['message'], $this->getLang('trans_message'), '', 'nowrap', array('size' => '50')));
+			$listbox = array(0 => $this->getLang('trans_wrong'),
+				1 => $this->getLang('trans_rephrase'),
+				2 => $this->getLang('trans_accepted')
+			);
+			$form->addElement(form_makeMenuField('quality', $listbox, $myReview['quality'], $this->getLang('trans_quality'), '', 'nowrap'));
+			$args = array();
+
+			if ($myReview['incomplete']) {
+				$args['checked'] = 'checked';
+			}
+
+			$form->addElement(form_makeCheckboxField('incomplete', '1', $this->getLang('trans_incomplete'), '', 'nowrap', $args));
+			$form->addElement(form_makeButton('submit', 'dokutranslate_review', $this->getLang('add_review')));
+		}
+
+		# Display all reviews for this paragraph
+		while (list($key, $value) = each($meta[$parid]['reviews'])) {
+			$ret .= '<tr><td>' . hsc($key) . '</td><td>';
+
+			# Moderators can modify their own review
+			if ($mod && $key == $_SERVER['REMOTE_USER']) {
+				$ret .= $form->getForm();
+			} else {
+				$ret .= hsc($value['message']);
+			}
+
+			$ret .= "</td></tr>\n";
+		}
+
+		# Current user is a moderator who didn't write a review yet,
+		# display the review form at the end
+		if ($mod && !isset($meta[$parid]['reviews'][$_SERVER['REMOTE_USER']])) {
+			if (empty($meta[$parid]['reviews'])) {
+				$ret .= '<tr><td>';
+			} else {
+				$ret .= '<tr><td colspan="2">';
+			}
+
+			$ret .= $form->getForm();
+			$ret .= "</td></tr>\n";
+		}
+
+		$ret .= "</table></div>\n";
+		return $ret;
 	}
 }
 

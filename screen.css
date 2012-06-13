@@ -9,3 +9,14 @@ table.dokutranslate td {
 	padding: 5px;
 	vertical-align: top;
 }
+
+.dokutranslate_review {
+	display: none;
+	clear: both;
+	text-align: left;
+	background-color: __background__;
+}
+
+td:hover .dokutranslate_review {
+	display: block;
+}

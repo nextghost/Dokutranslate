@@ -18,5 +18,12 @@ $lang['modgroup'] = 'Moderator Group:';
 $lang['where'] = 'Namespace';
 $lang['who'] = 'Moderator Group';
 $lang['delsel'] = 'Delete Selected';
+$lang['trans_message'] = 'Comment:';
+$lang['trans_wrong'] = 'Mistranslated';
+$lang['trans_rephrase'] = 'Correct but needs rephrasing';
+$lang['trans_accepted'] = 'Excellent';
+$lang['trans_quality'] = 'Translation Quality:';
+$lang['trans_incomplete'] = 'This paragraph is incomplete';
+$lang['add_review'] = 'Save Review';
 
 //Setup VIM: ex: et ts=4 :
