@@ -280,12 +280,14 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 
 			$form = new Doku_Form(array());
 			$form->addHidden('parid', strval($parid));
+			$form->addHidden('do', 'dokutranslate_review');
 			$form->addElement(form_makeTextField('review', $myReview['message'], $this->getLang('trans_message'), '', 'nowrap', array('size' => '50')));
-			$listbox = array(0 => $this->getLang('trans_wrong'),
-				1 => $this->getLang('trans_rephrase'),
-				2 => $this->getLang('trans_accepted')
+			$listbox = array(
+				array('0', $this->getLang('trans_wrong')),
+				array('1', $this->getLang('trans_rephrase')),
+				array('2', $this->getLang('trans_accepted'))
 			);
-			$form->addElement(form_makeMenuField('quality', $listbox, $myReview['quality'], $this->getLang('trans_quality'), '', 'nowrap'));
+			$form->addElement(form_makeMenuField('quality', $listbox, strval($myReview['quality']), $this->getLang('trans_quality'), '', 'nowrap'));
 			$args = array();
 
 			if ($myReview['incomplete']) {
@@ -293,7 +295,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			}
 
 			$form->addElement(form_makeCheckboxField('incomplete', '1', $this->getLang('trans_incomplete'), '', 'nowrap', $args));
-			$form->addElement(form_makeButton('submit', 'dokutranslate_review', $this->getLang('add_review')));
+			$form->addElement(form_makeButton('submit', '', $this->getLang('add_review')));
 		}
 
 		# Display all reviews for this paragraph

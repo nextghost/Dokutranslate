@@ -167,9 +167,12 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		global $RANGE;
 		global $REV;
 
-		# FIXME: Handle edits and reverts
-		$act = act_clean($event->data);
-		$act = act_permcheck($act);
+		$act = $event->data;
+
+		if ($act != 'dokutranslate_review') {
+			$act = act_clean($act);
+			$act = act_permcheck($act);
+		}
 
 		# Ignore drafts if the page is being translated
 		# FIXME: Find a way to save $_REQUEST['parid'] into the draft
@@ -308,6 +311,48 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 			# Build range for paragraph
 			$RANGE = strval($separators[$parid][2] + 1) . '-' . strval($separators[$parid + 1][1] - 1);
+		} else if ($act == 'dokutranslate_review') {
+			# This action is mine
+			$event->stopPropagation();
+			$event->preventDefault();
+
+			# Show the page when done
+			$ACT = 'show';
+
+			# Moderator privileges required
+			if (!isModerator($ID)) {
+				return;
+			}
+
+			# Load data
+			$meta = unserialize(io_readFile(metaFN($ID, '.translateHistory'), false));
+			$parid = getParID();
+			$writeRev = empty($REV) ? 'current' : intval($REV);
+			$writeRev = empty($meta[$writeRev][$parid]['changed']) ? $writeRev : $meta[$writeRev][$parid]['changed'];
+			$short = $meta[$writeRev][$parid];
+			$user = $_SERVER['REMOTE_USER'];
+
+/*
+			# You can't review your own translations
+			if ($short['user'] == $user || $short['ip'] == clientIP(true)) {
+				return;
+			}
+*/
+
+			# Add review to meta array
+			$data['message'] = $_REQUEST['review'];
+			$data['quality'] = intval($_REQUEST['quality']);
+			$data['incomplete'] = !empty($_REQUEST['incomplete']);
+			$meta[$writeRev][$parid]['reviews'][$user] = $data;
+
+			# Review applies to latest revision as well
+			if (empty($REV) || $meta['current'][$parid]['changed'] == $writeRev) {
+				$meta['current'][$parid]['reviews'][$user] = $data;
+				io_saveFile(metaFN($ID, '.translate'), serialize($meta['current']));
+			}
+
+			# Save metadata
+			io_saveFile(metaFN($ID, '.translateHistory'), serialize($meta));
 		}
 	}
 
