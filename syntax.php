@@ -261,7 +261,8 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	}
 
 	function _renderReviews($id, $meta, $parid) {
-		$mod = isModerator($id);
+		# Cannot review your own translation
+		$mod = isModerator($id) && $meta[$parid]['user'] != $_SERVER['REMOTE_USER'] && $meta[$parid]['ip'] != clientIP(true);
 
 		# No reviews and no moderator privileges => no review block
 		if (!$mod && empty($meta[$parid]['reviews'])) {

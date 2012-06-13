@@ -332,12 +332,10 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 			$short = $meta[$writeRev][$parid];
 			$user = $_SERVER['REMOTE_USER'];
 
-/*
 			# You can't review your own translations
 			if ($short['user'] == $user || $short['ip'] == clientIP(true)) {
 				return;
 			}
-*/
 
 			# Add review to meta array
 			$data['message'] = $_REQUEST['review'];
