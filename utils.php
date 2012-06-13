@@ -85,6 +85,11 @@ function isModerator($id) {
 	global $USERINFO;
 	static $modlist = NULL;
 
+	# Not logged in
+	if (empty($_SERVER['REMOTE_USER'])) {
+		return false;
+	}
+
 	if (is_null($modlist)) {
 		$modlist = parseModlist(loadModlist());
 	}
