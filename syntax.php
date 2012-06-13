@@ -279,6 +279,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			}
 
 			$form = new Doku_Form(array());
+			$form->addHidden('parid', strval($parid));
 			$form->addElement(form_makeTextField('review', $myReview['message'], $this->getLang('trans_message'), '', 'nowrap', array('size' => '50')));
 			$listbox = array(0 => $this->getLang('trans_wrong'),
 				1 => $this->getLang('trans_rephrase'),
