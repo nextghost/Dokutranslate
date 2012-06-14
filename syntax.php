@@ -310,7 +310,15 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			return '';
 		}
 
-		$ret = "<div class=\"dokutranslate_review\"><table>\n";
+		$ret = "<div class=\"dokutranslate_review\">\n";
+		$ret .= '<h5>' . $this->getLang('review_header') . "</h5>\n";
+		$ret .= "<table>\n";
+
+		$listbox = array(
+			array('0', $this->getLang('trans_wrong')),
+			array('1', $this->getLang('trans_rephrase')),
+			array('2', $this->getLang('trans_accepted'))
+		);
 
 		# Prepare review form for current user
 		if ($mod) {
@@ -324,11 +332,6 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			$form->addHidden('parid', strval($parid));
 			$form->addHidden('do', 'dokutranslate_review');
 			$form->addElement(form_makeTextField('review', $myReview['message'], $this->getLang('trans_message'), '', 'nowrap', array('size' => '50')));
-			$listbox = array(
-				array('0', $this->getLang('trans_wrong')),
-				array('1', $this->getLang('trans_rephrase')),
-				array('2', $this->getLang('trans_accepted'))
-			);
 			$form->addElement(form_makeMenuField('quality', $listbox, strval($myReview['quality']), $this->getLang('trans_quality'), '', 'nowrap'));
 			$args = array();
 
@@ -348,6 +351,13 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			if ($mod && $key == $_SERVER['REMOTE_USER']) {
 				$ret .= $form->getForm();
 			} else {
+				$ret .= '(' . $listbox[$value['quality']][1];
+
+				if ($value['incomplete']) {
+					$ret .= ', ' . $this->getLang('rend_incomplete');
+				}
+
+				$ret .= ') ';
 				$ret .= hsc($value['message']);
 			}
 

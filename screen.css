@@ -33,6 +33,10 @@ table.dokutranslate td.accept {
 	background-color: __background__;
 }
 
+div.dokuwiki .dokutranslate_review h5 {
+	margin-left: 1em;
+}
+
 td:hover .dokutranslate_review {
 	display: block;
 }

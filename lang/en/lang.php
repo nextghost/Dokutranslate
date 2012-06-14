@@ -25,5 +25,7 @@ $lang['trans_accepted'] = 'Excellent';
 $lang['trans_quality'] = 'Translation Quality:';
 $lang['trans_incomplete'] = 'This paragraph is incomplete';
 $lang['add_review'] = 'Save Review';
+$lang['rend_incomplete'] = 'Incomplete';
+$lang['review_header'] = 'Translation Reviews';
 
 //Setup VIM: ex: et ts=4 :
