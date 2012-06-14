@@ -10,6 +10,22 @@ table.dokutranslate td {
 	vertical-align: top;
 }
 
+table.dokutranslate td.mistrans {
+	background-color: red;
+}
+
+table.dokutranslate td.reph {
+	background-color: orange;
+}
+
+table.dokutranslate td.incaccept {
+	background-color: yellow;
+}
+
+table.dokutranslate td.accept {
+	background-color: lime;
+}
+
 .dokutranslate_review {
 	display: none;
 	clear: both;

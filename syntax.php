@@ -92,6 +92,31 @@ function loadTranslationMeta($id) {
 	return $ret;
 }
 
+function parReviewClass($meta, $parid) {
+	static $classes = array('mistrans', 'reph', 'incaccept', 'accept');
+
+	# No reviews, no class
+	if (empty($meta[$parid]['reviews'])) {
+		return '';
+	}
+
+	# Start with max possible value of $clsid
+	$clsid = count($classes) - 1;
+
+	# Find the worst review
+	foreach ($meta[$parid]['reviews'] as $line) {
+		$tmp = $line['quality'];
+
+		if ($tmp >= count($classes) - 2 && !$line['incomplete']) {
+			$tmp++;
+		}
+
+		$clsid = $tmp < $clsid ? $tmp : $clsid;
+	}
+
+	return empty($classes[$clsid]) ? '' : $classes[$clsid];
+}
+
 class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	private $origIns = NULL;
 	private $meta = NULL;
@@ -176,7 +201,15 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		switch ($data[0]) {
 		# Open the table
 		case DOKU_LEXER_ENTER:
-			$renderer->doc .= '<table width="100%" class="dokutranslate"><tbody><tr><td width="50%">';
+			$renderer->doc .= '<table width="100%" class="dokutranslate"><tbody><tr>';
+			$cls = parReviewClass($this->meta, $this->parCounter);
+
+			# Start the cell with proper review class
+			if (empty($cls)) {
+				$renderer->doc .= '<td width="50%">';
+			} else {
+				$renderer->doc .= '<td width="50%" class="' . $cls . '">';
+			}
 
 			# Insert edit form if we're editing the first paragraph
 			if (in_array($ACT, array('edit', 'preview')) && getParID() == 0) {
@@ -208,8 +241,16 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 				next($this->origIns);
 			}
 
-			$renderer->doc .= "</td></tr>\n<tr><td>";
+			$renderer->doc .= "</td></tr>\n<tr>";
 			$this->parCounter++;
+			$cls = parReviewClass($this->meta, $this->parCounter);
+
+			# Start the cell with proper review class
+			if (empty($cls)) {
+				$renderer->doc .= '<td width="50%">';
+			} else {
+				$renderer->doc .= '<td width="50%" class="' . $cls . '">';
+			}
 
 			# Insert edit form if we're editing this paragraph
 			if (in_array($ACT, array('edit', 'preview')) && getParID() == $this->parCounter) {
