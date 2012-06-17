@@ -116,6 +116,7 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		$controller->register_hook('HTML_SECEDIT_BUTTON', 'BEFORE', $this, 'handle_disabled');
 		$controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, 'handle_action_act_preprocess');
 		$controller->register_hook('PARSER_HANDLER_DONE', 'BEFORE', $this, 'handle_parser_handler_done');
+		$controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'handle_parser_cache_use');
 		$controller->register_hook('TPL_ACT_RENDER', 'BEFORE', $this, 'handle_tpl_act_render');
 		$controller->register_hook('TPL_CONTENT_DISPLAY', 'BEFORE', $this, 'handle_tpl_content_display');
 	}
@@ -371,6 +372,19 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 				unset($event->data->calls[$i]);
 			}
 		}
+	}
+
+	public function handle_parser_cache_use(Doku_Event &$event, $param) {
+		$cache =& $event->data;
+
+		if (empty($cache->page) || empty($cache->mode) || $cache->mode != 'xhtml' || !@file_exists(metaFN($cache->page, '.translate'))) {
+			return;
+		}
+
+		# Ensure refresh on plugin update
+		$cache->depends['files'][] = dirname(__FILE__) . '/plugin.info.txt';
+		# Ensure refresh with every new review
+		$cache->depends['files'][] = metaFN($cache->page, '.translate');
 	}
 
 	# Hijack edit page rendering
