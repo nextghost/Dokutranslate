@@ -115,6 +115,7 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		$controller->register_hook('HTML_EDITFORM_OUTPUT', 'BEFORE', $this, 'handle_html_editform_output');
 		$controller->register_hook('HTML_SECEDIT_BUTTON', 'BEFORE', $this, 'handle_disabled');
 		$controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, 'handle_action_act_preprocess');
+		$controller->register_hook('ACTION_SHOW_REDIRECT', 'BEFORE', $this, 'handle_action_show_redirect');
 		$controller->register_hook('PARSER_HANDLER_DONE', 'BEFORE', $this, 'handle_parser_handler_done');
 		$controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'handle_parser_cache_use');
 		$controller->register_hook('TPL_ACT_RENDER', 'BEFORE', $this, 'handle_tpl_act_render');
@@ -352,6 +353,18 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 			# Save metadata
 			io_saveFile(metaFN($ID, '.translateHistory'), serialize($meta));
+		}
+	}
+
+	public function handle_action_show_redirect(Doku_Event &$event, $param) {
+		$act = $event->data['preact'];
+
+		if ($act != 'dokutranslate_review') {
+			$act = act_clean($act);
+		}
+
+		if (($act == 'save' || $act == 'draftdel') && @file_exists(metaFN($event->data['id'], '.translate'))) {
+			$event->data['fragment'] = '_par' . getParID();
 		}
 	}
 

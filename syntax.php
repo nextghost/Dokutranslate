@@ -228,6 +228,9 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 				$renderer->doc .= '<td width="50%" class="' . $cls . '">';
 			}
 
+			# Paragraph anchor (yes, empty named anchor is valid)
+			$renderer->doc .= "<a name=\"_par$this->parCounter\"></a>\n";
+
 			# Insert edit form if we're editing the first paragraph
 			if (in_array($ACT, array('edit', 'preview')) && getParID() == 0) {
 				startEditForm($renderer);
@@ -268,6 +271,9 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			} else {
 				$renderer->doc .= '<td width="50%" class="' . $cls . '">';
 			}
+
+			# Paragraph anchor (yes, empty named anchor is valid)
+			$renderer->doc .= "<a name=\"_par$this->parCounter\"></a>\n";
 
 			# Insert edit form if we're editing this paragraph
 			if (in_array($ACT, array('edit', 'preview')) && getParID() == $this->parCounter) {
