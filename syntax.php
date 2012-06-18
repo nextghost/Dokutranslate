@@ -187,7 +187,24 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 		global $TEXT;
 		global $REV;
 
-		if($mode != 'xhtml') return false;
+		# No metadata rendering
+		if($mode == 'metadata') {
+			return false;
+		}
+
+		# Allow exporting the page
+		if (substr($ACT, 0, 7) == 'export_') {
+			# Ignore plugin-specific markup, just let text through
+			if ($data[0] != DOKU_LEXER_UNMATCHED) {
+				return true;
+			}
+
+			$renderer->cdata($data[1]);
+			return true;
+		# Not exporting, allow only XHTML
+		} else if ($mode != 'xhtml') {
+			return false;
+		}
 
 		# Load instructions for original text on first call
 		if (is_null($this->origIns)) {
