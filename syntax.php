@@ -311,7 +311,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 
 		# Just sanitize and dump the text
 		default:
-			$renderer->doc .= $renderer->_xmlEntities($data[1]);
+			$renderer->cdata($data[1]);
 			break;
 		}
 

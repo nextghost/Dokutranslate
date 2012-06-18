@@ -375,6 +375,7 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 	}
 
 	public function handle_parser_cache_use(Doku_Event &$event, $param) {
+		global $ACT;
 		$cache =& $event->data;
 
 		if (empty($cache->page) || empty($cache->mode) || $cache->mode != 'xhtml' || !@file_exists(metaFN($cache->page, '.translate'))) {
@@ -383,8 +384,16 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 		# Ensure refresh on plugin update
 		$cache->depends['files'][] = dirname(__FILE__) . '/plugin.info.txt';
-		# Ensure refresh with every new review
-		$cache->depends['files'][] = metaFN($cache->page, '.translate');
+
+		if (substr($ACT, 0, 7) == 'export_') {
+			# Don't write XHTML page and XHTML export data into
+			# the same cache file.
+			# Props to Michitux for suggesting this
+			$cache->cache .= '_export';
+		} else {
+			# Ensure refresh with every new review
+			$cache->depends['files'][] = metaFN($cache->page, '.translate');
+		}
 	}
 
 	# Hijack edit page rendering
