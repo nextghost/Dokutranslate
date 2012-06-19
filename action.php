@@ -398,6 +398,11 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 			# Props to Michitux for suggesting this
 			$cache->cache .= '_export';
 		} else {
+			# Separate cache file for each moderator
+			if (isModerator($cache->page)) {
+				$cache->cache .= '.' . urlencode($_SERVER['REMOTE_USER']);
+			}
+
 			# Ensure refresh with every new review
 			$cache->depends['files'][] = metaFN($cache->page, '.translate');
 		}
