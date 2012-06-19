@@ -26,6 +26,10 @@ table.dokutranslate td.accept {
 	background-color: lime;
 }
 
+table.dokutranslate td.reviewme {
+	background-color: __background_alt__;
+}
+
 .dokutranslate_review {
 	display: none;
 	clear: both;

@@ -117,6 +117,10 @@ function parReviewClass($meta, $parid) {
 	return empty($classes[$clsid]) ? '' : $classes[$clsid];
 }
 
+function needsReview($id, $meta, $parid) {
+	return canReview($id, $meta, $parid) && !isset($meta[$parid]['reviews'][$_SERVER['REMOTE_USER']]);
+}
+
 class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	private $origIns = NULL;
 	private $meta = NULL;
@@ -252,7 +256,13 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 				endEditForm($renderer);
 			}
 
-			$renderer->doc .= "</td>\n<td>";
+			$renderer->doc .= "</td>\n";
+			
+			if (needsReview($ID, $this->meta, $this->parCounter)) {
+				$renderer->doc .= '<td class="reviewme">';
+			} else {
+				$renderer->doc .= '<td>';
+			}
 
 			# If this condition fails, somebody's been messing
 			# with the data
@@ -303,7 +313,13 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 				}
 			}
 
-			$renderer->doc .= "</td>\n<td>";
+			$renderer->doc .= "</td>\n";
+			
+			if (needsReview($ID, $this->meta, $this->parCounter)) {
+				$renderer->doc .= '<td class="reviewme">';
+			} else {
+				$renderer->doc .= '<td>';
+			}
 
 			# Loop to make sure all remaining text gets dumped
 			# (external edit safety)
