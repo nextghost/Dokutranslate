@@ -112,4 +112,9 @@ function isModerator($id) {
 	return false;
 }
 
+function canReview($id, $meta, $parid) {
+	return isModerator($id) && $meta[$parid]['user'] != $_SERVER['REMOTE_USER'] && $meta[$parid]['ip'] != clientIP(true);
+
+}
+
 // vim:ts=4:sw=4:et:

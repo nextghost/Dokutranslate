@@ -321,21 +321,15 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 			# Show the page when done
 			$ACT = 'show';
 
-			# Moderator privileges required
-			if (!isModerator($ID)) {
-				return;
-			}
-
 			# Load data
 			$meta = unserialize(io_readFile(metaFN($ID, '.translateHistory'), false));
 			$parid = getParID();
 			$writeRev = empty($REV) ? 'current' : intval($REV);
 			$writeRev = empty($meta[$writeRev][$parid]['changed']) ? $writeRev : $meta[$writeRev][$parid]['changed'];
-			$short = $meta[$writeRev][$parid];
 			$user = $_SERVER['REMOTE_USER'];
 
-			# You can't review your own translations
-			if ($short['user'] == $user || $short['ip'] == clientIP(true)) {
+			# Check for permission to write reviews
+			if (!canReview($ID, $meta[$writeRev], $parid)) {
 				return;
 			}
 
