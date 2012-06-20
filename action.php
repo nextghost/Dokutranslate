@@ -441,11 +441,30 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		global $ID;
 
 		if (!@file_exists(metaFN($ID, '.translate'))) {
-			return;
-		}
+			preg_match_all('/<a [^>]* class="wikilink1" title="([^"]*)"[^>]*>/', $event->data, $out, PREG_SET_ORDER);
 
-		# Erase everything between markers
-		$event->data = preg_replace("/<!-- DOKUTRANSLATE ERASE START -->.*<!-- DOKUTRANSLATE ERASE STOP -->/sm", '', $event->data);
+			# Gather internal links
+			foreach ($out as $link) {
+				if (isset($status[$link[1]])) {
+					continue;
+				}
+
+				# Calculate translation status for each link
+				$status[$link[1]] = $this->_translationStatus($link[1]);
+			}
+
+			# Write translation status next to each link
+			while (list($key, $value) = each($status)) {
+				if (empty($value)) {
+					continue;
+				}
+
+				$event->data = preg_replace("#<a ([^>]*) class=\"wikilink1\" title=\"$key\"([^>]*)>(.*)</a>#U", "<a \\1 class=\"wikilink1\" title=\"$key\"\\2>\\3</a> ($value)", $event->data);
+			}
+		} else {
+			# Erase everything between markers
+			$event->data = preg_replace("/<!-- DOKUTRANSLATE ERASE START -->.*<!-- DOKUTRANSLATE ERASE STOP -->/sm", '', $event->data);
+		}
 	}
 
 	# Generic event eater
@@ -458,6 +477,45 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 		}
 
 		return;
+	}
+
+	function _translationStatus($id) {
+		if (!@file_exists(metaFN($id, '.translate'))) {
+			return '';
+		}
+
+		$meta = unserialize(io_readFile(metaFN($id, '.translate'), false));
+		$total = 0;
+		$reviewme = false;
+
+		while (list($key, $value) = each($meta)) {
+			$rating = empty($value['reviews']) ? 0 : 4;
+
+			foreach ($value['reviews'] as $review) {
+				$tmp = intval($review['quality']) * 2;
+
+				if ($review['incomplete']) {
+					$tmp--;
+				}
+
+				$tmp = $tmp < 0 ? 0 : $tmp;
+				$rating = $tmp < $rating ? $tmp : $rating;
+			}
+
+			$total += $rating;
+
+			if (needsReview($id, $meta, $key)) {
+				$reviewme = true;
+			}
+		}
+
+		$ret = sprintf($this->getLang('trans_percentage'), 25 * $total / count($meta));
+
+		if ($reviewme) {
+			$ret .= ', ' . $this->getLang('reviewme');
+		}
+
+		return $ret;
 	}
 }
 

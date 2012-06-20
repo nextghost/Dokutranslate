@@ -27,5 +27,7 @@ $lang['trans_incomplete'] = 'This paragraph is incomplete';
 $lang['add_review'] = 'Save Review';
 $lang['rend_incomplete'] = 'Incomplete';
 $lang['review_header'] = 'Translation Reviews';
+$lang['trans_percentage'] = '%d%% translated';
+$lang['reviewme'] = 'text waiting for your review';
 
 //Setup VIM: ex: et ts=4 :

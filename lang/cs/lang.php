@@ -21,5 +21,7 @@ $lang['trans_incomplete'] = 'Tento odstavec je neúplný';
 $lang['add_review'] = 'Uložit hodnocení';
 $lang['rend_incomplete'] = 'Neúplný';
 $lang['review_header'] = 'Hodnocení překladu';
+$lang['trans_percentage'] = '%d%% přeloženo';
+$lang['reviewme'] = 'text potřebuje ohodnotit';
 
 //Setup VIM: ex: et ts=4 :

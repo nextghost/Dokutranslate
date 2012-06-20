@@ -117,10 +117,6 @@ function parReviewClass($meta, $parid) {
 	return empty($classes[$clsid]) ? '' : $classes[$clsid];
 }
 
-function needsReview($id, $meta, $parid) {
-	return canReview($id, $meta, $parid) && !isset($meta[$parid]['reviews'][$_SERVER['REMOTE_USER']]);
-}
-
 class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 	private $origIns = NULL;
 	private $meta = NULL;
