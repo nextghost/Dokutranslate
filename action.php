@@ -442,6 +442,7 @@ class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
 		if (!@file_exists(metaFN($ID, '.translate'))) {
 			preg_match_all('/<a [^>]* class="wikilink1" title="([^"]*)"[^>]*>/', $event->data, $out, PREG_SET_ORDER);
+			$status = array();
 
 			# Gather internal links
 			foreach ($out as $link) {
