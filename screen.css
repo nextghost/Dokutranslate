@@ -44,3 +44,11 @@ div.dokuwiki .dokutranslate_review h5 {
 td:hover .dokutranslate_review {
 	display: block;
 }
+
+.dokutranslate div.secedit {
+	margin-top: 0px;
+}
+
+.dokutranslate p {
+	margin-bottom: 1ex;
+}
