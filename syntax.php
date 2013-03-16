@@ -215,6 +215,9 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			$DOKUTRANSLATE_NEST--;
 		}
 
+		$parid = getParID();
+		$edithere = (in_array($ACT, array('edit', 'preview')) && $parid == $this->parCounter);
+
 		switch ($data[0]) {
 		# Open the table
 		case DOKU_LEXER_ENTER:
@@ -232,7 +235,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			$renderer->doc .= "<a name=\"_par$this->parCounter\"></a>\n";
 
 			# Insert edit form if we're editing the first paragraph
-			if (in_array($ACT, array('edit', 'preview')) && getParID() == 0) {
+			if ($edithere) {
 				startEditForm($renderer);
 			}
 
@@ -248,13 +251,13 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 
 				$renderer->doc .= $this->_renderReviews($ID, $this->meta, $this->parCounter);
 			# Finish erasure if we're editing this paragraph
-			} else if (in_array($ACT, array('edit', 'preview')) && getParID() == $this->parCounter) {
+			} else if ($edithere) {
 				endEditForm($renderer);
 			}
 
 			$renderer->doc .= "</td>\n";
 			
-			if (needsReview($ID, $this->meta, $this->parCounter)) {
+			if (needsReview($ID, $this->meta, $this->parCounter) || $edithere) {
 				$renderer->doc .= '<td class="reviewme">';
 			} else {
 				$renderer->doc .= '<td>';
@@ -311,7 +314,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 
 			$renderer->doc .= "</td>\n";
 			
-			if (needsReview($ID, $this->meta, $this->parCounter)) {
+			if (needsReview($ID, $this->meta, $this->parCounter) || $edithere) {
 				$renderer->doc .= '<td class="reviewme">';
 			} else {
 				$renderer->doc .= '<td>';
