@@ -253,6 +253,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 			# Finish erasure if we're editing this paragraph
 			} else if ($edithere) {
 				endEditForm($renderer);
+				$renderer->doc .= $this->_renderReviews($ID, $this->meta, $this->parCounter);
 			}
 
 			$renderer->doc .= "</td>\n";
@@ -306,6 +307,7 @@ class syntax_plugin_dokutranslate extends DokuWiki_Syntax_Plugin {
 
 				if ($parid == $this->parCounter) {
 					endEditForm($renderer);
+					$renderer->doc .= $this->_renderReviews($ID, $this->meta, $this->parCounter);
 				# Invalid paragraph ID, show form here
 				} else if ($parid > $this->parCounter) {
 					startEditForm($renderer, true);
