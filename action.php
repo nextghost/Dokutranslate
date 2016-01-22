@@ -110,7 +110,7 @@ function updateMeta($id, $parid, $lastrev, $revert = -1) {
 
 class action_plugin_dokutranslate extends DokuWiki_Action_Plugin {
 
-	public function register(Doku_Event_Handler &$controller) {
+	public function register(Doku_Event_Handler $controller) {
 		$this->setupLocale();
 		$controller->register_hook('HTML_EDITFORM_OUTPUT', 'BEFORE', $this, 'handle_html_editform_output');
 		$controller->register_hook('HTML_SECEDIT_BUTTON', 'BEFORE', $this, 'handle_disabled');
